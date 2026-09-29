@@ -1,0 +1,87 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+:root {
+  height: 100%;
+  width: 100%;
+}
+
+:root {
+  --black-color: #000000;
+  --white-color: #ffffff;
+  --pink-color: #f72798;
+  --orange-color: #f57d1f;
+  --yellow-color: #ebf400;
+}
+
+body {
+  color: var(--white-color);
+  background: var(--black-color);
+  font-family: "Roboto", sans-serif;
+}
+
+::-webkit-scrollbar {
+  width: 3px;
+}
+/* 
+::-webkit-scrollbar-track {
+  background: #555;
+} */
+
+::-webkit-scrollbar-thumb {
+  background: var(--pink-color);
+  border-radius: 2px;
+}
+
+/* SHAKE ANIMATION ON HORIZONTAL DIRECTION */
+.shake {
+  animation: shake 0.82s cubic-bezier(0.36, 0.07, 0.19, 0.97) 0.2s both;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+@keyframes shake {
+  10%,
+  90% {
+    transform: translate3d(-1px, 0, 0);
+  }
+
+  20%,
+  80% {
+    transform: translate3d(2px, 0, 0);
+  }
+
+  30%,
+  50%,
+  70% {
+    transform: translate3d(-4px, 0, 0);
+  }
+
+  40%,
+  60% {
+    transform: translate3d(4px, 0, 0);
+  }
+}
+
+.offlineStatus:before {
+  content: "";
+  position: absolute;
+  z-index: 10;
+  display: block;
+  border-radius: 9999px;
+  --tw-bg-opacity: 1;
+  background-color: rgb(68, 66, 66);
+  outline-style: solid;
+  outline-width: 2px;
+  outline-color: rgb(80, 77, 77);
+  width: 12%;
+  height: 12%;
+  top: 4%;
+  right: 10%;
+}
