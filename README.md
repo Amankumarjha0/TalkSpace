@@ -1,157 +1,187 @@
-# TalkSpace: Real-Time Chat Application
+# 💬 TalkSpace — Modern Real-Time Chat & Social Platform
 
-TalkSpace is a real-time chat app built with the MERN stack, Socket.io, Tailwind CSS, and React. It supports secure auth, live messaging, online status, and profile management.
+<div align="center">
 
-## Features
+![TalkSpace Banner](https://img.shields.io/badge/TalkSpace-Real--Time%20Chat-6366f1?style=for-the-badge&logo=socketdotio&logoColor=white)
 
-- Real-time messaging with Socket.io
-- JWT-based authentication
-- Online/offline user status
-- Sidebar conversations and search
-- User profile page for updating credentials
-- Responsive dark UI
+[![React](https://img.shields.io/badge/React-18.x-61dafb?style=flat-square&logo=react&logoColor=black)](https://reactjs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Express](https://img.shields.io/badge/Express-4.x-000000?style=flat-square&logo=express&logoColor=white)](https://expressjs.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose-47A248?style=flat-square&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
+[![Socket.io](https://img.shields.io/badge/Socket.io-4.x-010101?style=flat-square&logo=socketdotio&logoColor=white)](https://socket.io/)
+[![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-3.x-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
-## Tech Stack
+**TalkSpace** is a full-featured, real-time messaging web application built on the MERN stack. Designed with a sleek dark aesthetic, instant WebSocket synchronization, friendship management system, and secure authentication.
 
-- Frontend: React + Vite + Tailwind CSS
-- Backend: Node.js + Express
-- Database: MongoDB
-- Real-time layer: Socket.io
+[Features](#-key-features) • [Tech Stack](#-tech-stack) • [Quick Start](#-quick-start) • [Environment Setup](#-environment-variables) • [Architecture](#-architecture) • [Author](#-author)
 
-## Project Structure
+</div>
 
-- frontend/ — Vite React app
-- backend/ — Express API and Socket server
-- .env — local environment variables (ignored by Git)
+---
 
-## Local Setup
+## ✨ Key Features
 
-1. Install root dependencies:
-   ```bash
-   npm install
-   ```
+- ⚡ **Instant Real-Time Messaging**: Bidirectional WebSocket communication powered by **Socket.io** for real-time delivery and instant notifications.
+- 👥 **Friendship & Request System**: Send, accept, decline, or cancel friend requests with real-time updates and presence.
+- 🏷️ **Unique Username Onboarding**: Real-time debounce availability checking and collision-free unique usernames.
+- 🟢 **Live Online/Offline Presence**: See when friends are active in real time.
+- 🖼️ **Profile Photo Uploads**: Cloudinary integration for cloud avatar uploads with initials fallback support.
+- 🔐 **Dual Auth & Security**:
+  - Secure JWT authentication with HTTP-only cookies.
+  - Twilio Verify OTP (phone number verification) support.
+  - Rate limiting, XSS sanitation, and route protection middleware.
+- 🔍 **Real-Time Prefix Search**: Instant user search with prefix matching for quick friend discovery.
+- 🎨 **Modern Dark UI**: Fully responsive, glassmorphic dark theme styled with Tailwind CSS and custom DaisyUI components.
 
-2. Install backend dependencies:
-   ```bash
-   cd backend
-   npm install
-   ```
+---
 
-3. Install frontend dependencies:
-   ```bash
-   cd frontend
-   npm install
-   ```
+## 🛠️ Tech Stack
 
-4. Create a local environment file in the backend folder:
-   ```env
-   PORT=5000
-   MONGO_URI=mongodb://127.0.0.1:27017/talkspace
-   JWT_SECRET=your_super_secret_key
-   NODE_ENV=development
-   TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-   TWILIO_API_KEY=SKxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-   TWILIO_API_SECRET=your_api_key_secret
-   TWILIO_VERIFY_SERVICE_SID=VAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-   CLOUDINARY_CLOUD_NAME=your_cloud_name
-   CLOUDINARY_API_KEY=your_api_key
-   CLOUDINARY_API_SECRET=your_api_secret
-   ```
+### Frontend
+- **Framework**: React 18 (Vite)
+- **Styling**: Tailwind CSS, DaisyUI
+- **State Management**: Zustand
+- **Icons & Audio**: React Icons, HTML5 Audio notifications
+- **Real-Time Client**: Socket.io-client
 
-5. Before starting the upgraded app, migrate existing usernames and conversations:
-   ```bash
-   cd backend
-   npm run migrate:usernames
-   ```
-   Run this once against the same MongoDB database used by the backend. It assigns collision-free usernames, converts existing conversations to accepted friendships, and creates the required unique/query indexes.
+### Backend
+- **Runtime**: Node.js & Express.js
+- **Database**: MongoDB with Mongoose ODM
+- **WebSockets**: Socket.io
+- **File Storage**: Cloudinary SDK & Multer
+- **Auth & Security**: JSON Web Tokens (JWT), BcryptJS, Cookie-Parser, Twilio Verify SDK
 
-6. Start backend:
-   ```bash
-   cd backend
-   npm run start
-   ```
+---
 
-7. Start frontend:
-   ```bash
-   cd frontend
-   npm run dev
-   ```
+## 📂 Project Structure
 
-## Profile Photo Storage
+```bash
+TalkSpace/
+├── backend/
+│   ├── config/          # Cloudinary & MongoDB database connections
+│   ├── controllers/     # Auth, User, Username, Friendship, Message controllers
+│   ├── middleware/      # Auth guard, rate limiters, file upload middleware
+│   ├── models/          # User, Friendship, Message, Conversation schemas
+│   ├── routes/          # RESTful API route definitions
+│   ├── scripts/         # DB migration utilities
+│   ├── services/        # Business logic for friendship & messaging
+│   ├── socket/          # Socket.io connection & event handlers
+│   └── server.js        # Entry point for backend server
+├── frontend/
+│   ├── public/          # Static assets & logos
+│   ├── src/
+│   │   ├── assets/      # Audio notification & icons
+│   │   ├── components/  # Modals, Chat, Sidebar, Landing, Fallback avatars
+│   │   ├── context/     # Auth & Socket providers
+│   │   ├── hooks/       # Custom React hooks (auth, messages, conversations)
+│   │   ├── pages/       # Home, Login, Signup, Profile, ChooseUsername
+│   │   └── zustand/     # Conversation & chat state stores
+│   └── index.html
+└── README.md
+```
 
-Profile photos are uploaded directly to Cloudinary and the resulting secure URL is stored in MongoDB. Create a free Cloudinary account, find the **Cloud name**, **API Key**, and **API Secret** in the Cloudinary Console, and add them to `backend/.env` as `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET`. Restart the backend after adding the values. Keep the API secret private and configure the same variables in your production backend environment.
+---
 
-## Usernames and Friendships
+## 🚀 Quick Start
 
-New accounts must choose an available username before opening chats. User search uses a lowercase username prefix; the sidebar lists accepted conversations only. Before deploying this version, back up MongoDB and run `npm run migrate:usernames` from `backend/` once.
+### Prerequisites
+- [Node.js](https://nodejs.org/) (v18+ recommended)
+- [MongoDB](https://www.mongodb.com/) (local instance or MongoDB Atlas)
+- Free [Cloudinary](https://cloudinary.com/) account (for photo uploads)
 
-### Manual Verification
+### 1. Clone the repository
+```bash
+git clone https://github.com/Amankumarjha0/TalkSpace.git
+cd TalkSpace
+```
 
-1. Create accounts A and B. Each first login should require a username. Try `ab`, a value with a hyphen, and a taken username; they must not save. A valid 3-20 character lowercase username should show availability after a short pause and save successfully.
-2. Open two browsers/accounts and enter the same available username at nearly the same time. Exactly one save should succeed; the other should receive “Username taken” and remain on onboarding.
-3. Search for the first two or more characters of B's username as A. Confirm results are username-prefix matches, the exact username is first, and searching punctuation does not broaden the match.
-4. From A, add B. Confirm B receives a realtime request and sees it in **Requests**. Test **Requested** cancellation, **Accept**, and **Decline**. Accepting should create one conversation and notify A; if B instead sends a request while A's request is pending, the relationship should auto-accept.
-5. Confirm **Chats** contains only accepted friends, shows latest-message preview/time, has the empty state when appropriate, and loads more than 50 chats when scrolled.
-6. Before accepting a request, call `POST /api/messages/send/<other-user-id>` with a valid authenticated session, and emit the Socket.IO `sendMessage` event with that recipient. Both paths must reject the message. After accepting, both paths should succeed.
-7. While A and B are friends and online, confirm they see each other's online status. A third unrelated online account must not appear. Unfriend or block A/B and confirm search, requests, messages, and friend presence are no longer available between them.
+### 2. Backend Setup
+```bash
+cd backend
+npm install
+```
 
-## Twilio Verify Setup
+Create a `.env` file in the `backend/` directory:
+```env
+PORT=5000
+MONGO_URI=mongodb://127.0.0.1:27017/talkspace
+JWT_SECRET=your_super_secret_jwt_key
+NODE_ENV=development
 
-The backend uses Twilio Verify for OTP delivery and code checking when `TWILIO_VERIFY_SERVICE_SID` is set. The Verify Service creates and validates the code; the app does not send a custom SMS body or select the Marketing Promotions template from the Twilio message tester.
+# Cloudinary (Profile Photos)
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 
-1. Sign in to the [Twilio Console](https://console.twilio.com/).
-2. In the Console navigation, open **Develop > Verify > Services**. You can also open the [Verify Services page](https://www.twilio.com/console/verify/services).
-3. Choose **Create new Service**. Give it a friendly name such as `TalkSpace OTP` and create it.
-4. Open the service you created and copy its **Service SID**. It begins with `VA`. Set this as `TWILIO_VERIFY_SERVICE_SID` in `backend/.env`. Do not use the Account SID (`AC...`) or an API Key SID (`SK...`) here.
-5. In the Verify Service settings, set the code length to **6** to match the app's six-digit OTP input.
-6. In **Develop > API keys & tokens > API keys**, create or use a **Main** API key belonging to the same Twilio account as the Verify Service. Put its key SID (`SK...`) in `TWILIO_API_KEY` and its matching secret in `TWILIO_API_SECRET`. Keep the secret private.
-7. Set `TWILIO_ACCOUNT_SID` to the account SID (`AC...`) that owns the API key and Verify Service. The required backend settings are:
+# Twilio Verify (Optional OTP support)
+TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_API_KEY=SKxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_API_SECRET=your_twilio_secret
+TWILIO_VERIFY_SERVICE_SID=VAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
 
-   ```env
-   TWILIO_ACCOUNT_SID=AC...
-   TWILIO_API_KEY=SK...
-   TWILIO_API_SECRET=...
-   TWILIO_VERIFY_SERVICE_SID=VA...
-   ```
+Run database migration (indexes and username verification):
+```bash
+npm run migrate:usernames
+```
 
-   `TWILIO_PHONE_NUMBER` is not needed when using Verify. It is only used by the legacy direct-SMS fallback when no Verify Service SID is configured.
+Start the backend server:
+```bash
+npm run start
+# Server runs on http://localhost:5000
+```
 
-8. If the Twilio account is still a trial account, add and verify the recipient phone number in the Console's **Verified Caller IDs** area. Trial accounts can send Verify SMS only to verified recipients. Enter the recipient in international E.164 format, for example `+1...` or `+91...`.
-9. Restart the backend after saving `backend/.env`, then use **Login** or **Sign up** in TalkSpace, request an OTP, and enter the received six-digit code. For trial accounts, test with a number verified in Twilio first.
-10. If delivery or checking fails, inspect **Monitor > Logs > Verify** in the Twilio Console. Never paste API secrets or OTP codes into chat or commit them to Git.
+### 3. Frontend Setup
+```bash
+cd ../frontend
+npm install
+npm run dev
+# App runs on http://localhost:5173
+```
 
-For Render, add the same four required variables (`TWILIO_ACCOUNT_SID`, `TWILIO_API_KEY`, `TWILIO_API_SECRET`, and `TWILIO_VERIFY_SERVICE_SID`) in the backend service's **Environment** settings, then redeploy. Keep the secrets out of the repository.
+---
 
-## Production Deployment
+## 🔑 Environment Variables
 
-### Backend (Render)
+| Variable | Description | Required |
+|---|---|:---:|
+| `PORT` | Backend server port (Default: `5000`) | No |
+| `MONGO_URI` | MongoDB connection connection string | **Yes** |
+| `JWT_SECRET` | Secret key used to sign session tokens | **Yes** |
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud identifier | **Yes** |
+| `CLOUDINARY_API_KEY` | Cloudinary API Key | **Yes** |
+| `CLOUDINARY_API_SECRET` | Cloudinary API Secret | **Yes** |
+| `TWILIO_ACCOUNT_SID` | Twilio Master Account SID | Optional |
+| `TWILIO_VERIFY_SERVICE_SID`| Twilio Verify Service SID (`VA...`) | Optional |
 
-- Root directory: backend
-- Build command: npm install
-- Start command: npm start
-- Environment variables:
-  - PORT
-  - MONGO_URI
-  - JWT_SECRET
-  - NODE_ENV
-   - TWILIO_ACCOUNT_SID
-   - TWILIO_API_KEY
-   - TWILIO_API_SECRET
-   - TWILIO_VERIFY_SERVICE_SID
+---
 
-### Frontend (Vercel)
+## 🚢 Production Deployment
 
-- Root directory: frontend
-- Build command: npm install && npm run build
-- Output directory: dist
-- Add environment variable if needed:
-  - VITE_SOCKET_URL=https://your-backend-url.onrender.com
+### Backend (Render / Railway / VPS)
+- **Root Directory**: `backend`
+- **Build Command**: `npm install`
+- **Start Command**: `npm start`
+- **Environment Variables**: Add all `.env` variables in your platform dashboard.
 
-## Notes
+### Frontend (Vercel / Netlify)
+- **Root Directory**: `frontend`
+- **Build Command**: `npm run build`
+- **Output Directory**: `dist`
+- **Optional Env**: `VITE_SOCKET_URL=https://your-backend-domain.com`
 
-- Local environment files are intentionally ignored by Git.
-- Do not commit your real .env values.
+---
 
-## Acknowledgements
+## 👨‍💻 Author
 
-Special thanks to MongoDB, Express, React, Node.js, and Socket.io for making this project possible.
+Developed and maintained by **[Aman Kumar Jha](https://github.com/Amankumarjha0)**.
+
+- GitHub: [@Amankumarjha0](https://github.com/Amankumarjha0)
+- Repository: [TalkSpace](https://github.com/Amankumarjha0/TalkSpace)
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
