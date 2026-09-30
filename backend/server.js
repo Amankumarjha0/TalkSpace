@@ -41,10 +41,15 @@ app.use("/api/users", userRoutes);
 app.use("/api/username", usernameRoutes);
 app.use("/api/friendships", friendshipRoutes);
 
-app.use(express.static(path.join(__dirname, "/frontend/dist")));
+const distPath = path.join(__dirname, "../frontend/dist");
+app.use(express.static(distPath));
 
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "frontend", "dist", "index.html"));
+  res.sendFile(path.join(distPath, "index.html"), (err) => {
+    if (err) {
+      res.status(200).json({ message: "TalkSpace Backend API is running!" });
+    }
+  });
 });
 
 server.listen(PORT, () => console.log(`Server running on port: ${PORT}`));
