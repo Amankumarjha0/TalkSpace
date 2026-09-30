@@ -14,7 +14,7 @@ const SOCKET_URL =
   (typeof window !== "undefined" &&
   window.location.hostname !== "localhost" &&
   window.location.hostname !== "127.0.0.1"
-    ? window.location.origin
+    ? "https://talkspace-hx3t.onrender.com"
     : "http://localhost:5000");
 
 const getCookie = (name) => {
