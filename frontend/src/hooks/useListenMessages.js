@@ -35,9 +35,25 @@ const useListenMessages = () => {
       sound.play().catch(() => {});
     };
 
-    socket.on("newMessage", handleNewMessage);
+    const handleDeleteForMe = ({ messageId }) => {
+      setMessages((prevMessages) => prevMessages.filter((message) => message._id !== messageId));
+    };
 
-    return () => socket.off("newMessage", handleNewMessage);
+    const handleDeleteForEveryone = ({ messageId }) => {
+      setMessages((prevMessages) => prevMessages.map((message) => message._id === messageId
+        ? { ...message, message: "", attachments: [], deletedForEveryone: true }
+        : message));
+    };
+
+    socket.on("newMessage", handleNewMessage);
+    socket.on("messageDeletedForMe", handleDeleteForMe);
+    socket.on("messageDeleted", handleDeleteForEveryone);
+
+    return () => {
+      socket.off("newMessage", handleNewMessage);
+      socket.off("messageDeletedForMe", handleDeleteForMe);
+      socket.off("messageDeleted", handleDeleteForEveryone);
+    };
   }, [socket, selectedConversation?._id, authUser?._id, setMessages]);
 };
 
