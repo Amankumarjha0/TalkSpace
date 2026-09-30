@@ -6,6 +6,7 @@ import { IoArrowBack } from "react-icons/io5";
 
 import { useAuthContext } from "../../context/AuthContext";
 import AvatarWithFallback from "../../components/common/AvatarWithFallback";
+import { getUserFriendlyError } from "../../utils/getUserFriendlyError";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -86,7 +87,8 @@ const ProfilePage = () => {
       toast.success("Profile updated successfully");
       navigate("/");
     } catch (error) {
-      toast.error(error.message);
+      const userMsg = getUserFriendlyError(error, "Could not update profile. Please try again.");
+      if (userMsg) toast.error(userMsg);
     } finally {
       setLoading(false);
     }

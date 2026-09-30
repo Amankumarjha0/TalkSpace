@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuthContext } from "../../context/AuthContext";
 import AvatarWithFallback, { isDefaultAvatar } from "../../components/common/AvatarWithFallback";
+import { getUserFriendlyError } from "../../utils/getUserFriendlyError";
 
 const USERNAME_PATTERN = /^[a-z0-9_.]{3,20}$/;
 
@@ -52,6 +53,7 @@ const ChooseUsernamePage = () => {
     e.preventDefault();
     if (availability !== "available") return;
     setSaving(true);
+
     try {
       const res = await fetch("/api/username", {
         method: "POST",
@@ -69,7 +71,8 @@ const ChooseUsernamePage = () => {
       navigate("/", { replace: true });
     } catch (err) {
       if (err.message === "Username taken") setAvailability("taken");
-      toast.error(err.message);
+      const userMsg = getUserFriendlyError(err, "Could not save username. Please try again.");
+      if (userMsg) toast.error(userMsg);
     } finally {
       setSaving(false);
     }

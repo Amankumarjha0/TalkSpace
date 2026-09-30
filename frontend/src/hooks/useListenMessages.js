@@ -45,7 +45,20 @@ const useListenMessages = () => {
 
         if (alreadyExists) return prevMessages;
 
-        return [...prevMessages, { ...newMessage, shouldShake: true }];
+        const isIncomingInActiveChat = senderId === currentUserId;
+        if (isIncomingInActiveChat) {
+          fetch(`/api/messages/mark-seen/${senderId}`, { method: "PUT", credentials: "include" }).catch(() => {});
+          socket.emit("markAsSeen", { senderId });
+        }
+
+        return [
+          ...prevMessages,
+          {
+            ...newMessage,
+            status: isIncomingInActiveChat ? "seen" : newMessage.status || "delivered",
+            shouldShake: true,
+          },
+        ];
       });
 
       // Play notification sound if message is received from recipient
@@ -65,6 +78,34 @@ const useListenMessages = () => {
       }
     };
 
+    const handleMessageStatusUpdated = ({ receiverId, status }) => {
+      setMessages((prevMessages) =>
+        prevMessages.map((msg) => {
+          if (String(msg.receiverId) === String(receiverId) && msg.status !== "seen") {
+            return { ...msg, status };
+          }
+          return msg;
+        })
+      );
+    };
+
+    const handleMessagesSeen = ({ senderId, receiverId }) => {
+      setMessages((prevMessages) =>
+        prevMessages.map((msg) => {
+          const isRelevant =
+            String(msg.senderId) === String(senderId) ||
+            String(msg.receiverId) === String(senderId) ||
+            String(msg.senderId) === String(receiverId) ||
+            String(msg.receiverId) === String(receiverId);
+
+          if (isRelevant) {
+            return { ...msg, status: "seen" };
+          }
+          return msg;
+        })
+      );
+    };
+
     const handleDeleteForMe = ({ messageId }) => {
       setMessages((prevMessages) => prevMessages.filter((message) => String(message._id) !== String(messageId)));
     };
@@ -76,11 +117,15 @@ const useListenMessages = () => {
     };
 
     socket.on("newMessage", handleNewMessage);
+    socket.on("messageStatusUpdated", handleMessageStatusUpdated);
+    socket.on("messagesSeen", handleMessagesSeen);
     socket.on("messageDeletedForMe", handleDeleteForMe);
     socket.on("messageDeleted", handleDeleteForEveryone);
 
     return () => {
       socket.off("newMessage", handleNewMessage);
+      socket.off("messageStatusUpdated", handleMessageStatusUpdated);
+      socket.off("messagesSeen", handleMessagesSeen);
       socket.off("messageDeletedForMe", handleDeleteForMe);
       socket.off("messageDeleted", handleDeleteForEveryone);
     };

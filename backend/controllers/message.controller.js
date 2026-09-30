@@ -296,3 +296,25 @@ export const deleteMessageForEveryone = asyncHandler(async (req, res) => {
   io.to(userRoom(message.receiverId)).emit("messageDeleted", event);
   res.status(200).json(event);
 });
+
+export const markMessagesAsSeen = asyncHandler(async (req, res) => {
+  const senderId = req.params.senderId;
+  const receiverId = req.user._id;
+
+  if (!mongoose.Types.ObjectId.isValid(senderId)) {
+    return res.status(400).json({ error: "Invalid sender ID" });
+  }
+
+  const result = await Message.updateMany(
+    { senderId, receiverId, status: { $ne: "seen" } },
+    { $set: { status: "seen" } }
+  );
+
+  if (result.modifiedCount > 0) {
+    const payload = { senderId: String(receiverId), receiverId: String(senderId), status: "seen" };
+    io.to(userRoom(senderId)).emit("messagesSeen", payload);
+    io.to(userRoom(receiverId)).emit("messagesSeen", payload);
+  }
+
+  res.status(200).json({ success: true, count: result.modifiedCount });
+});

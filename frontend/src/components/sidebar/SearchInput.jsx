@@ -6,6 +6,8 @@ import { IoSearchSharp, IoCloseSharp } from "react-icons/io5";
 import useConversation from "../../zustand/useConversation";
 import AvatarWithFallback from "../common/AvatarWithFallback";
 
+import { getUserFriendlyError } from "../../utils/getUserFriendlyError";
+
 const SearchInput = ({ onFriendshipsChanged }) => {
   const [search, setSearch] = useState("");
   const [results, setResults] = useState([]);
@@ -37,8 +39,8 @@ const SearchInput = ({ onFriendshipsChanged }) => {
       } catch (error) {
         if (error.name !== "AbortError") {
           setResults([]);
-          setSearchError(error.message);
-          toast.error(error.message);
+          const userMsg = getUserFriendlyError(error, "Could not perform search. Please try again.");
+          setSearchError(userMsg);
         }
       } finally {
         if (!controller.signal.aborted) setSearching(false);
@@ -96,7 +98,8 @@ const SearchInput = ({ onFriendshipsChanged }) => {
       setResults((current) => current.map((item) => item._id === result._id ? { ...item, relationshipStatus } : item));
       if (relationshipStatus === "accepted") onFriendshipsChanged?.();
     } catch (error) {
-      toast.error(error.message);
+      const userMsg = getUserFriendlyError(error, "Action could not be completed. Please try again.");
+      if (userMsg) toast.error(userMsg);
     } finally {
       setBusyId("");
     }

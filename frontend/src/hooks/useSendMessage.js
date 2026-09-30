@@ -2,6 +2,8 @@ import { useState } from "react";
 import useConversation from "../zustand/useConversation";
 import toast from "react-hot-toast";
 
+import { getUserFriendlyError } from "../utils/getUserFriendlyError";
+
 const useSendMessage = () => {
   const [loading, setLoading] = useState(false);
   const { setMessages, selectedConversation } = useConversation();
@@ -28,7 +30,8 @@ const useSendMessage = () => {
       ) ? prevMessages : [...prevMessages, data]);
       return true;
     } catch (error) {
-      toast.error(error.message || "Message could not be sent");
+      const userMessage = getUserFriendlyError(error, "Message could not be sent. Please try again.");
+      if (userMessage) toast.error(userMessage);
       return false;
     } finally {
       setLoading(false);

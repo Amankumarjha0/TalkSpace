@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import { getUserFriendlyError } from "../utils/getUserFriendlyError";
 
 const useGetConversations = (refreshKey = 0) => {
   const [loading, setLoading] = useState(true);
@@ -26,10 +27,11 @@ const useGetConversations = (refreshKey = 0) => {
         if (!response.ok) throw new Error(data?.error || "Could not load chats");
         setConversations(data.conversations || []);
         setNextCursor(data.nextCursor || null);
-      } catch (error) {
-        if (error.name !== "AbortError") {
-          setError(error.message);
-          toast.error(error.message);
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          const userMessage = getUserFriendlyError(err, "Could not load chats. Please check your connection.");
+          setError(userMessage);
+          if (userMessage) toast.error(userMessage);
         }
       } finally {
         if (!controller.signal.aborted) setLoading(false);
@@ -52,8 +54,9 @@ const useGetConversations = (refreshKey = 0) => {
       if (!response.ok) throw new Error(data?.error || "Could not load more chats");
       setConversations((current) => [...current, ...(data.conversations || [])]);
       setNextCursor(data.nextCursor || null);
-    } catch (error) {
-      toast.error(error.message);
+    } catch (err) {
+      const userMessage = getUserFriendlyError(err, "Could not load more chats.");
+      if (userMessage) toast.error(userMessage);
     } finally {
       loadingMoreRef.current = false;
       setLoadingMore(false);

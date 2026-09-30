@@ -39,8 +39,12 @@ const io = new Server(server, {
   },
 });
 
+import Message from "../models/message.model.js";
+
 const userSocketMap = new Map();
 const userRoom = (userId) => `user:${userId}`;
+
+export const isUserOnline = (userId) => userSocketMap.has(String(userId)) && userSocketMap.get(String(userId))?.size > 0;
 
 const getAcceptedFriendIds = async (userId) => {
   const friendships = await Friendship.find({
@@ -112,6 +116,23 @@ io.on("connection", async (socket) => {
     io.emit("presence", { userId, online: true });
   }
 
+  // Update pending 'sent' messages to 'delivered' now that receiver is online
+  try {
+    const pendingMessages = await Message.find({ receiverId: userId, status: "sent" }).select("senderId _id").lean();
+    if (pendingMessages.length > 0) {
+      await Message.updateMany({ receiverId: userId, status: "sent" }, { $set: { status: "delivered" } });
+      const senderIds = [...new Set(pendingMessages.map((m) => String(m.senderId)))];
+      senderIds.forEach((senderId) => {
+        io.to(userRoom(senderId)).emit("messageStatusUpdated", {
+          receiverId: userId,
+          status: "delivered",
+        });
+      });
+    }
+  } catch (err) {
+    console.error("Error updating delivered status on connection:", err.message);
+  }
+
   socket.on("sendMessage", async (payload, acknowledge = () => {}) => {
     const receiverId = String(payload?.receiverId || "");
     const message = typeof payload?.message === "string" ? payload.message.trim() : "";
@@ -130,6 +151,24 @@ io.on("connection", async (socket) => {
     } catch (error) {
       console.error("Socket message failed:", error.message);
       acknowledge({ error: "Message could not be sent" });
+    }
+  });
+
+  socket.on("markAsSeen", async ({ senderId, conversationId }, acknowledge = () => {}) => {
+    if (!senderId || !mongoose.Types.ObjectId.isValid(senderId)) return;
+    try {
+      const query = { senderId, receiverId: userId, status: { $ne: "seen" } };
+      if (conversationId) query.conversationId = conversationId;
+
+      const result = await Message.updateMany(query, { $set: { status: "seen" } });
+      if (result.modifiedCount > 0) {
+        const payload = { senderId: userId, receiverId: senderId, conversationId, status: "seen" };
+        io.to(userRoom(senderId)).emit("messagesSeen", payload);
+        io.to(userRoom(userId)).emit("messagesSeen", payload);
+      }
+      acknowledge({ success: true });
+    } catch (err) {
+      console.error("Error marking messages as seen:", err.message);
     }
   });
 

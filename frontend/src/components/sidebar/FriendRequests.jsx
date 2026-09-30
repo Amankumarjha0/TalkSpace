@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useSocketContext } from "../../context/SocketContext";
 import AvatarWithFallback from "../common/AvatarWithFallback";
+import { getUserFriendlyError } from "../../utils/getUserFriendlyError";
 
 const FriendRequests = ({ refreshKey, onChanged, onCountChange }) => {
   const [incoming, setIncoming] = useState([]);
@@ -34,8 +35,9 @@ const FriendRequests = ({ refreshKey, onChanged, onCountChange }) => {
         setSent(sentData);
       } catch (err) {
         if (err.name !== "AbortError") {
-          setError(err.message);
-          toast.error(err.message);
+          const userMsg = getUserFriendlyError(err, "Could not load requests. Please check your connection.");
+          setError(userMsg);
+          if (userMsg) toast.error(userMsg);
         }
       } finally {
         if (!controller.signal.aborted) setLoading(false);
@@ -86,7 +88,8 @@ const FriendRequests = ({ refreshKey, onChanged, onCountChange }) => {
       setIncoming((cur) => cur.filter((r) => r.requester?._id !== requesterId));
       if (action === "accept") onChanged?.();
     } catch (err) {
-      toast.error(err.message);
+      const userMsg = getUserFriendlyError(err, "Action could not be completed. Please try again.");
+      if (userMsg) toast.error(userMsg);
     } finally {
       setBusyId("");
     }
@@ -105,7 +108,8 @@ const FriendRequests = ({ refreshKey, onChanged, onCountChange }) => {
       setSent((cur) => cur.filter((r) => r.recipient?._id !== recipientId));
       toast.success("Request cancelled");
     } catch (err) {
-      toast.error(err.message);
+      const userMsg = getUserFriendlyError(err, "Could not cancel request. Please try again.");
+      if (userMsg) toast.error(userMsg);
     } finally {
       setBusyId("");
     }

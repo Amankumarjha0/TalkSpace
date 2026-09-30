@@ -2,10 +2,14 @@ import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 
 import useConversation from "../zustand/useConversation";
+import { useSocketContext } from "../context/SocketContext.jsx";
+
+import { getUserFriendlyError } from "../utils/getUserFriendlyError";
 
 const useGetMessages = () => {
   const [loading, setLoading] = useState(false);
   const { messages, setMessages, selectedConversation } = useConversation();
+  const { socket } = useSocketContext();
 
   useEffect(() => {
     const getMessages = async () => {
@@ -19,15 +23,27 @@ const useGetMessages = () => {
         if (data?.error) throw new Error(data.error);
 
         setMessages(data);
+
+        // Mark all messages from selectedConversation as seen
+        if (selectedConversation?._id) {
+          fetch(`/api/messages/mark-seen/${selectedConversation._id}`, {
+            method: "PUT",
+            credentials: "include",
+          }).catch(() => {});
+          if (socket) {
+            socket.emit("markAsSeen", { senderId: selectedConversation._id });
+          }
+        }
       } catch (error) {
-        toast.error(error?.message);
+        const userMsg = getUserFriendlyError(error, "Could not load messages. Please try again.");
+        if (userMsg) toast.error(userMsg);
       } finally {
         setLoading(false);
       }
     };
 
     if (selectedConversation?._id) getMessages();
-  }, [selectedConversation?._id, setMessages]);
+  }, [selectedConversation?._id, setMessages, socket]);
 
   return { loading, messages };
 };

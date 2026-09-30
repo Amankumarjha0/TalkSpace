@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { toast } from "react-hot-toast";
 import { useAuthContext } from "../context/AuthContext";
+import { getUserFriendlyError } from "../utils/getUserFriendlyError";
 
 const isValidEmail = (email) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || "").trim());
@@ -55,7 +56,8 @@ const useSignup = () => {
 
       return true;
     } catch (error) {
-      toast.error(error?.message || "Failed to send OTP");
+      const userMsg = getUserFriendlyError(error, "Could not send OTP. Please try again.");
+      if (userMsg) toast.error(userMsg);
       return false;
     } finally {
       setLoading(false);
@@ -100,7 +102,8 @@ const useSignup = () => {
       setAuthUser(data);
       toast.success("Account created successfully!");
     } catch (error) {
-      toast.error(error?.message || "Signup failed");
+      const userMsg = getUserFriendlyError(error, "Signup failed. Please check your OTP and try again.");
+      if (userMsg) toast.error(userMsg);
     } finally {
       setLoading(false);
     }

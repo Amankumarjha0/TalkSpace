@@ -2,6 +2,8 @@ import { useState } from "react";
 import PropTypes from "prop-types";
 import toast from "react-hot-toast";
 import {
+  BsCheck,
+  BsCheckAll,
   BsDownload,
   BsFileEarmark,
   BsFileEarmarkPdf,
@@ -15,6 +17,7 @@ import {
 } from "react-icons/bs";
 import { useAuthContext } from "../../context/AuthContext";
 import useConversation from "../../zustand/useConversation";
+import { getUserFriendlyError } from "../../utils/getUserFriendlyError";
 
 const formatFileSize = (size) => {
   if (size < 1024 * 1024) return `${Math.max(1, Math.round(size / 1024))} KB`;
@@ -171,6 +174,7 @@ const Message = ({ message }) => {
         }, 200);
       }, remainingMs);
     };
+
     img.onerror = () => {
       clearInterval(interval);
       setLoadingProgress((prev) => {
@@ -178,7 +182,7 @@ const Message = ({ message }) => {
         delete next[id];
         return next;
       });
-      toast.error("Could not load image");
+      toast.error("Could not load image. Please check your internet connection.");
     };
     img.src = attachment.url;
   };
@@ -228,7 +232,8 @@ const Message = ({ message }) => {
       revealImageAfterSave(attachment);
     } catch (error) {
       if (error.name !== "AbortError") {
-        toast.error(error.message || "Could not download this file");
+        const userMsg = getUserFriendlyError(error, "Could not download this file. Please try again.");
+        if (userMsg) toast.error(userMsg);
       }
     }
   };
@@ -253,7 +258,7 @@ const Message = ({ message }) => {
     };
     image.onerror = () => {
       setLoadingPreviewId(null);
-      toast.error("Could not load this image");
+      toast.error("Could not load this image. Please check your connection.");
     };
     image.src = attachment.url;
   };
@@ -280,7 +285,8 @@ const Message = ({ message }) => {
       }
       setShowDeletePrompt(false);
     } catch (error) {
-      toast.error(error.message || "Could not delete message");
+      const userMsg = getUserFriendlyError(error, "Could not delete message. Please try again.");
+      if (userMsg) toast.error(userMsg);
     } finally {
       setDeleting(false);
     }
@@ -398,8 +404,28 @@ const Message = ({ message }) => {
           </>
         )}
       </div>
-      <div className="chat-footer opacity-50 text-xs flex gap-1 items-center">
+      <div className="chat-footer opacity-70 text-xs flex gap-1 items-center">
         {formattedTime}
+        {fromMe && !deletedForEveryone && (
+          <span
+            className="inline-flex items-center ml-0.5"
+            title={
+              message.status === "seen"
+                ? "Read / Seen"
+                : message.status === "delivered"
+                ? "Delivered (Receiver Online)"
+                : "Sent (Receiver Offline)"
+            }
+          >
+            {message.status === "seen" ? (
+              <BsCheckAll className="text-sky-400 font-bold" size={17} />
+            ) : message.status === "delivered" ? (
+              <BsCheckAll className="text-gray-300" size={17} />
+            ) : (
+              <BsCheck className="text-gray-300" size={17} />
+            )}
+          </span>
+        )}
         {!deletedForEveryone && (
           <button
             type="button"
@@ -513,5 +539,6 @@ Message.propTypes = {
     })),
     deletedForEveryone: PropTypes.bool,
     shouldShake: PropTypes.bool,
+    status: PropTypes.string,
   }).isRequired,
 };

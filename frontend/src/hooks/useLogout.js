@@ -3,6 +3,8 @@ import { useClerk } from "@clerk/clerk-react";
 import toast from "react-hot-toast";
 import { useAuthContext } from "../context/AuthContext";
 
+import { getUserFriendlyError } from "../utils/getUserFriendlyError";
+
 const useLogout = () => {
   const [loading, setLoading] = useState(false);
   const { setAuthUser } = useAuthContext();
@@ -24,7 +26,8 @@ const useLogout = () => {
       toast.success("Successfully logged out!");
     } catch (error) {
       console.error("Logout error:", error);
-      toast.error(error.message || "Failed to logout");
+      const userMsg = getUserFriendlyError(error, "Could not log out cleanly. Please try again.");
+      if (userMsg) toast.error(userMsg);
     } finally {
       setLoading(false);
     }
