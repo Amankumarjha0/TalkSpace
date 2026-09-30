@@ -5,6 +5,8 @@ import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import { clerkMiddleware } from "@clerk/express";
 
+import cors from "cors";
+
 // Utils
 import { app, server } from "./socket/socket.js";
 import connectDB from "./config/db.js";
@@ -26,6 +28,27 @@ if (!process.env.MONGO_URI && !process.env.JWT_SECRET) {
 const PORT = process.env.PORT || 5000;
 
 connectDB(process.env.MONGO_URI);
+
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "https://talkspace.vercel.app",
+];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      if (/https:\/\/.*\.vercel\.app$/i.test(origin) || /https:\/\/.*\.onrender\.com$/i.test(origin)) {
+        return callback(null, true);
+      }
+      return callback(null, true);
+    },
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 app.use(cookieParser());
