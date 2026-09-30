@@ -13,9 +13,9 @@
 [![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-3.x-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
-**TalkSpace** is a full-featured, real-time messaging web application built on the MERN stack. Designed with a sleek dark aesthetic, instant WebSocket synchronization, friendship management system, and secure authentication powered by Clerk & JWT.
+**TalkSpace** is a full-featured, real-time messaging web application built on the MERN stack. Designed with a sleek dark aesthetic, instant WebSocket synchronization, WhatsApp-style delivery receipts, file attachments, friendship management, and secure authentication powered by Clerk & JWT.
 
-[Features](#-key-features) • [Tech Stack](#-tech-stack) • [Quick Start](#-quick-start) • [Environment Setup](#-environment-variables) • [Architecture](#-architecture) • [Author](#-author)
+[Features](#-key-features) • [Tech Stack](#-tech-stack) • [Quick Start](#-quick-start) • [Environment Setup](#-environment-variables) • [Architecture](#-project-structure) • [Author](#-author)
 
 </div>
 
@@ -23,16 +23,22 @@
 
 ## ✨ Key Features
 
-- ⚡ **Instant Real-Time Messaging**: Bidirectional WebSocket communication powered by **Socket.io** for real-time delivery and instant sound notifications.
-- 👥 **Friendship & Request System**: Send, accept, decline, or cancel friend requests with real-time updates and presence.
-- 🏷️ **Unique Username Onboarding**: Real-time debounce availability checking and collision-free unique usernames.
-- 🟢 **Live Online/Offline Presence**: See when friends are active in real time.
-- 🖼️ **Profile Photo Uploads**: Cloudinary integration for cloud avatar uploads with initials fallback support.
-- 🔐 **Modern Auth & Security**:
-  - Secure authentication powered by **Clerk** & JWT.
-  - Rate limiting, XSS sanitation, and route protection middleware.
-- 🔍 **Real-Time Prefix Search**: Instant user search with prefix matching for quick friend discovery.
-- 🎨 **Modern Dark UI**: Fully responsive, glassmorphic dark theme styled with Tailwind CSS and custom DaisyUI components.
+- ⚡ **Instant Real-Time Messaging**: Bidirectional WebSocket communication powered by **Socket.io** with instant audio notifications and live updates.
+- ⏱️ **WhatsApp-Style Status Receipts**:
+  - **Single Gray Tick (`✓`)**: Message sent to server (receiver offline).
+  - **Double Gray Tick (`✓✓`)**: Message delivered to recipient (receiver online).
+  - **Double Blue Tick (`✓✓` Blue)**: Message read / seen by recipient.
+- 🖼️ **WhatsApp-Style In-Chat Image Reveal**:
+  - Blurred thumbnail preview with interactive center loading pill displaying **1% ➔ 100%** progress.
+  - Image unblurs in-place on completion.
+  - Clean bottom-right download button to save files to disk.
+- 📄 **Rich Document Attachments & Icons**: Distinct color-coded file icons for PDF (`.pdf`), Word (`.docx`), PowerPoint (`.pptx`), Excel (`.xlsx`), ZIP archives, and text files.
+- 🌌 **Glassmorphic Full-Screen Image Viewer**: High-res preview modal with `backdrop-blur-md` background and click-outside dismissal.
+- 👥 **Friendship & Request System**: Send, accept, decline, or cancel friend requests with real-time presence sync.
+- 🏷️ **Unique Username Onboarding**: Real-time availability checking with collision-free unique usernames.
+- 🟢 **Live Online/Offline Presence**: Instant online status indicators across chats and user list.
+- 🛡️ **User-Friendly Error Handling & Clerk Error Boundary**: Catch-all error formatting providing friendly user messages and graceful fallback screens if setup keys are invalid.
+- 🎨 **Modern Dark UI**: Fully responsive, glassmorphic dark theme styled with Tailwind CSS and DaisyUI components.
 
 ---
 
@@ -77,6 +83,7 @@ TalkSpace/
 │   │   ├── context/     # Auth & Socket providers
 │   │   ├── hooks/       # Custom React hooks (auth, messages, conversations)
 │   │   ├── pages/       # Home, Login, Signup, Profile, ChooseUsername
+│   │   ├── utils/       # Error formatting & helper utilities
 │   │   └── zustand/     # Conversation & chat state stores
 │   └── index.html
 └── README.md
@@ -89,7 +96,7 @@ TalkSpace/
 ### Prerequisites
 - [Node.js](https://nodejs.org/) (v18+ recommended)
 - [MongoDB](https://www.mongodb.com/) (local instance or MongoDB Atlas)
-- Free [Cloudinary](https://cloudinary.com/) account (for photo uploads)
+- Free [Cloudinary](https://cloudinary.com/) account (for file & photo uploads)
 - Free [Clerk](https://clerk.com/) account (for authentication)
 
 ### 1. Clone the repository
@@ -111,7 +118,7 @@ MONGO_URI=mongodb://127.0.0.1:27017/talkspace
 JWT_SECRET=your_super_secret_jwt_key
 NODE_ENV=development
 
-# Cloudinary (Profile Photos)
+# Cloudinary (Attachments & Profile Photos)
 CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
 CLOUDINARY_API_KEY=your_cloudinary_api_key
 CLOUDINARY_API_SECRET=your_cloudinary_api_secret
@@ -138,15 +145,17 @@ cd ../frontend
 npm install
 ```
 
-Create a `.env` file in the `frontend/` directory (if using Clerk on frontend):
+Create a `.env` file in the `frontend/` directory:
 ```env
-VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
+VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
+VITE_APP_URL=http://localhost:3000
+VITE_SOCKET_URL=http://localhost:5000
 ```
 
 Start the frontend development server:
 ```bash
 npm run dev
-# App runs on http://localhost:5173
+# App runs on http://localhost:3000
 ```
 
 ---
@@ -158,8 +167,9 @@ npm run dev
 | Variable | Description | Required |
 |---|---|:---:|
 | `PORT` | Backend server port (Default: `5000`) | No |
-| `MONGO_URI` | MongoDB connection string | **Yes** |
+| `MONGO_URI` | MongoDB connection string (Atlas for production) | **Yes** |
 | `JWT_SECRET` | Secret key used to sign session tokens | **Yes** |
+| `NODE_ENV` | `development` or `production` | **Yes** |
 | `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud identifier | **Yes** |
 | `CLOUDINARY_API_KEY` | Cloudinary API Key | **Yes** |
 | `CLOUDINARY_API_SECRET` | Cloudinary API Secret | **Yes** |
@@ -170,8 +180,9 @@ npm run dev
 
 | Variable | Description | Required |
 |---|---|:---:|
-| `VITE_CLERK_PUBLISHABLE_KEY` | Clerk Publishable Key for Frontend SDK | As needed |
-| `VITE_SOCKET_URL` | Production Backend Socket URL | For Production |
+| `VITE_CLERK_PUBLISHABLE_KEY` | Clerk Publishable Key for Frontend SDK (`pk_test_...`) | **Yes** |
+| `VITE_APP_URL` | Frontend application URL | **Yes** |
+| `VITE_SOCKET_URL` | Backend Socket URL | For Production |
 
 ---
 
@@ -181,15 +192,15 @@ npm run dev
 - **Root Directory**: `backend`
 - **Build Command**: `npm install`
 - **Start Command**: `npm start`
-- **Environment Variables**: Add all `.env` variables in your platform dashboard.
+- **Environment Variables**: Set `NODE_ENV=production` and add all database & Cloudinary credentials.
 
 ### Frontend (Vercel / Netlify)
 - **Root Directory**: `frontend`
 - **Build Command**: `npm run build`
 - **Output Directory**: `dist`
 - **Environment Variables**:
-  - `VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key`
-  - `VITE_SOCKET_URL=https://your-backend-domain.com`
+  - `VITE_CLERK_PUBLISHABLE_KEY=pk_test_...`
+  - `VITE_SOCKET_URL=https://your-backend-domain.onrender.com`
 
 ---
 
