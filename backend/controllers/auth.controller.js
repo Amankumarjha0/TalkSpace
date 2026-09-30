@@ -76,9 +76,10 @@ export const syncClerkUser = asyncHandler(async (req, res) => {
     }
 
     // Set JWT cookie so socket and existing protected routes work seamlessly
-    generateToken(user._id, res);
+    const token = generateToken(user._id, res);
 
     return res.status(200).json({
+      token,
       _id: user._id,
       clerkId: user.clerkId,
       fullName: user.fullName,

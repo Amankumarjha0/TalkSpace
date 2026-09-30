@@ -13,7 +13,7 @@ const MessageContainer = () => {
 
   const { onlineUsers } = useSocketContext();
   const isOnline = onlineUsers.some(
-    (userId) => userId === String(selectedConversation?._id)
+    (userId) => String(userId) === String(selectedConversation?._id)
   );
 
   useEffect(() => {
@@ -22,39 +22,41 @@ const MessageContainer = () => {
 
   return (
     <div
-      className={`${selectedConversation ? "flex" : "hidden"} min-h-0 min-w-0 flex-1 flex-col bg-[#0a0a0a] md:flex`}
+      className={`${selectedConversation ? "flex" : "hidden"} h-full max-h-[100dvh] min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[#0a0a0a] md:flex`}
     >
       {!selectedConversation ? (
         <NoChatSelected />
       ) : (
         <>
-          <div className="mb-2 flex h-14 shrink-0 items-center gap-2 bg-black px-3 py-2 sm:px-4">
-            <button
-              type="button"
-              aria-label="Back to chats"
-              title="Back to chats"
-              onClick={() => setSelectedConversation(null)}
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-white hover:bg-white/10 md:hidden"
-            >
-              <IoArrowBack size={22} />
-            </button>
-            <div className="w-10 rounded-full">
-              <AvatarWithFallback
-                src={selectedConversation?.profilePic}
-                name={selectedConversation?.fullName}
-                authProvider={selectedConversation?.authProvider}
-                size="w-10 h-10"
-              />
-            </div>
-            <div className="flex min-w-0 flex-col">
-              <span className="truncate text-white font-bold">
-                {selectedConversation?.fullName}
-              </span>
-              {isOnline ? (
-                <span className="text-gray-300 italic">online</span>
-              ) : (
-                <span className="text-gray-300 italic">offline</span>
-              )}
+          <div className="flex h-14 shrink-0 items-center border-b border-white/10 bg-black px-3 py-2 sm:px-4">
+            <div className="flex min-w-0 items-center gap-2">
+              <button
+                type="button"
+                aria-label="Back to chats"
+                title="Back to chats"
+                onClick={() => setSelectedConversation(null)}
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-white hover:bg-white/10 md:hidden"
+              >
+                <IoArrowBack size={22} />
+              </button>
+              <div className="w-10 h-10 rounded-full shrink-0">
+                <AvatarWithFallback
+                  src={selectedConversation?.profilePic}
+                  name={selectedConversation?.fullName}
+                  authProvider={selectedConversation?.authProvider}
+                  size="w-10 h-10"
+                />
+              </div>
+              <div className="flex min-w-0 flex-col">
+                <span className="truncate text-white font-bold">
+                  {selectedConversation?.fullName}
+                </span>
+                {isOnline ? (
+                  <span className="text-emerald-400 text-xs italic font-medium">online</span>
+                ) : (
+                  <span className="text-gray-400 text-xs italic">offline</span>
+                )}
+              </div>
             </div>
           </div>
 

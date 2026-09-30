@@ -1,7 +1,18 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
 import toast from "react-hot-toast";
-import { BsDownload, BsFileEarmark, BsFileEarmarkPdf, BsThreeDotsVertical, BsX } from "react-icons/bs";
+import {
+  BsDownload,
+  BsFileEarmark,
+  BsFileEarmarkPdf,
+  BsFileEarmarkWord,
+  BsFileEarmarkPpt,
+  BsFileEarmarkExcel,
+  BsFileEarmarkZip,
+  BsFileEarmarkText,
+  BsThreeDotsVertical,
+  BsX,
+} from "react-icons/bs";
 import { useAuthContext } from "../../context/AuthContext";
 import useConversation from "../../zustand/useConversation";
 
@@ -18,6 +29,11 @@ const FILE_TYPE_LABELS = {
   ".pdf": "PDF document",
   ".ppt": "PowerPoint presentation",
   ".pptx": "PowerPoint presentation",
+  ".csv": "CSV spreadsheet",
+  ".xls": "Excel spreadsheet",
+  ".xlsx": "Excel spreadsheet",
+  ".zip": "ZIP archive",
+  ".txt": "Text document",
 };
 
 const MIME_TYPES_BY_EXTENSION = {
@@ -26,6 +42,52 @@ const MIME_TYPES_BY_EXTENSION = {
   ".pdf": "application/pdf",
   ".ppt": "application/vnd.ms-powerpoint",
   ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  ".csv": "text/csv",
+  ".xls": "application/vnd.ms-excel",
+  ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  ".zip": "application/zip",
+  ".txt": "text/plain",
+};
+
+const getIsImage = (attachment) => {
+  const name = (attachment.originalName || "").toLowerCase();
+  const mime = (attachment.mimeType || "").toLowerCase();
+  const nonImageExtensions = [
+    ".pdf", ".doc", ".docx", ".ppt", ".pptx", ".csv",
+    ".xls", ".xlsx", ".zip", ".txt", ".rar", ".7z",
+    ".mp3", ".mp4", ".wav", ".avi", ".mov"
+  ];
+
+  if (nonImageExtensions.some((ext) => name.endsWith(ext))) return false;
+  if (mime === "application/pdf" || mime.includes("document") || mime.includes("presentation") || mime.includes("spreadsheet") || mime.includes("excel")) return false;
+
+  return mime.startsWith("image/") || attachment.resourceType === "image";
+};
+
+const getDocumentIcon = (attachment) => {
+  const name = (attachment.originalName || "").toLowerCase();
+  const mime = (attachment.mimeType || "").toLowerCase();
+
+  if (name.endsWith(".pdf") || mime === "application/pdf") {
+    return <BsFileEarmarkPdf aria-hidden="true" className="shrink-0 text-red-400" size={24} />;
+  }
+  if (name.endsWith(".doc") || name.endsWith(".docx") || mime.includes("word")) {
+    return <BsFileEarmarkWord aria-hidden="true" className="shrink-0 text-blue-400" size={24} />;
+  }
+  if (name.endsWith(".ppt") || name.endsWith(".pptx") || mime.includes("presentation") || mime.includes("powerpoint")) {
+    return <BsFileEarmarkPpt aria-hidden="true" className="shrink-0 text-amber-400" size={24} />;
+  }
+  if (name.endsWith(".xls") || name.endsWith(".xlsx") || name.endsWith(".csv") || mime.includes("excel") || mime.includes("spreadsheet") || mime.includes("csv")) {
+    return <BsFileEarmarkExcel aria-hidden="true" className="shrink-0 text-emerald-400" size={24} />;
+  }
+  if (name.endsWith(".zip") || name.endsWith(".rar") || name.endsWith(".7z") || mime.includes("zip") || mime.includes("archive")) {
+    return <BsFileEarmarkZip aria-hidden="true" className="shrink-0 text-yellow-400" size={24} />;
+  }
+  if (name.endsWith(".txt") || mime.includes("text/plain")) {
+    return <BsFileEarmarkText aria-hidden="true" className="shrink-0 text-gray-300" size={24} />;
+  }
+
+  return <BsFileEarmark aria-hidden="true" className="shrink-0 text-gray-300" size={24} />;
 };
 
 const Message = ({ message }) => {
@@ -37,6 +99,7 @@ const Message = ({ message }) => {
   const [activeImage, setActiveImage] = useState(null);
   const [activeImageSaved, setActiveImageSaved] = useState(false);
   const [revealedAttachmentIds, setRevealedAttachmentIds] = useState([]);
+  const [loadingProgress, setLoadingProgress] = useState({});
 
   const fromMe = String(message.senderId) === String(authUser?._id);
 
@@ -66,11 +129,58 @@ const Message = ({ message }) => {
     `/api/messages/${message._id}/attachments/${attachmentIndex}/download`;
 
   const revealImageAfterSave = (attachment) => {
-    if (attachment.resourceType !== "image" && !attachment.mimeType?.startsWith("image/")) return;
-    setRevealedAttachmentIds((current) => current.includes(attachment.publicId)
-      ? current
-      : [...current, attachment.publicId]);
+    if (!getIsImage(attachment)) return;
+    setRevealedAttachmentIds((current) =>
+      current.includes(attachment.publicId) ? current : [...current, attachment.publicId]
+    );
     if (activeImage?.publicId === attachment.publicId) setActiveImageSaved(true);
+  };
+
+  const handleRevealImage = (attachment) => {
+    const id = attachment.publicId;
+    if (loadingProgress[id] !== undefined || revealedAttachmentIds.includes(id)) return;
+
+    setLoadingProgress((prev) => ({ ...prev, [id]: 1 }));
+
+    const startedAt = Date.now();
+    let currentProgress = 1;
+
+    const interval = setInterval(() => {
+      currentProgress += Math.floor(Math.random() * 12) + 8;
+      if (currentProgress >= 95) {
+        currentProgress = 95;
+        clearInterval(interval);
+      }
+      setLoadingProgress((prev) => ({ ...prev, [id]: currentProgress }));
+    }, 70);
+
+    const img = new Image();
+    img.onload = () => {
+      const elapsed = Date.now() - startedAt;
+      const remainingMs = Math.max(0, 600 - elapsed);
+      setTimeout(() => {
+        clearInterval(interval);
+        setLoadingProgress((prev) => ({ ...prev, [id]: 100 }));
+        setTimeout(() => {
+          setRevealedAttachmentIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+          setLoadingProgress((prev) => {
+            const next = { ...prev };
+            delete next[id];
+            return next;
+          });
+        }, 200);
+      }, remainingMs);
+    };
+    img.onerror = () => {
+      clearInterval(interval);
+      setLoadingProgress((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+      toast.error("Could not load image");
+    };
+    img.src = attachment.url;
   };
 
   const saveAttachment = async (attachment, attachmentIndex) => {
@@ -189,51 +299,94 @@ const Message = ({ message }) => {
             {message.attachments?.length > 0 && (
               <div className={`flex max-w-full flex-wrap gap-2 ${message.message ? "mt-2" : ""}`}>
                 {message.attachments.map((attachment, attachmentIndex) => {
-                  const isImage = attachment.resourceType === "image" || attachment.mimeType?.startsWith("image/");
+                  const isImage = getIsImage(attachment);
                   const wasRevealedBefore = attachment.revealedFor?.some(
                     (userId) => String(userId) === String(authUser?._id)
                   );
                   const imageIsRevealed = fromMe || wasRevealedBefore || revealedAttachmentIds.includes(attachment.publicId);
+                  const isDownloading = loadingProgress[attachment.publicId] !== undefined;
+
                   return isImage ? (
                     <div key={attachment.publicId} className="group relative max-w-full overflow-hidden rounded">
                       <img
                         src={imageIsRevealed ? attachment.url : attachment.previewUrl || attachment.url}
                         alt={imageIsRevealed ? attachment.originalName : `Preview of ${attachment.originalName}`}
-                        className={`max-h-72 max-w-full rounded object-contain ${imageIsRevealed ? "" : "blur-[2px]"}`}
+                        className={`max-h-72 max-w-full rounded object-contain transition-all duration-300 ${imageIsRevealed ? "" : "blur-[8px] scale-105"}`}
                       />
+                      {!imageIsRevealed && !fromMe && (
+                        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 backdrop-blur-[2px]">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRevealImage(attachment);
+                            }}
+                            disabled={isDownloading}
+                            aria-label={`Load image ${attachment.originalName}`}
+                            title={isDownloading ? `Loading... ${loadingProgress[attachment.publicId]}%` : `Load ${formatFileSize(attachment.size)}`}
+                            className="flex items-center gap-2 rounded-full bg-black/75 px-4 py-2 text-sm font-medium text-white shadow-xl backdrop-blur-md transition hover:bg-black/95 hover:scale-105 disabled:hover:scale-100"
+                          >
+                            {isDownloading ? (
+                              <>
+                                <span className="loading loading-spinner loading-xs text-emerald-400" />
+                                <span className="font-semibold text-emerald-400">
+                                  {loadingProgress[attachment.publicId]}%
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <BsDownload size={15} className="shrink-0 text-white" />
+                                <span>{formatFileSize(attachment.size)}</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      )}
                       <button
                         type="button"
-                        onClick={() => openImagePreview(attachment, attachmentIndex, !fromMe && !imageIsRevealed)}
-                        disabled={loadingPreviewId === attachment.publicId}
+                        onClick={() => {
+                          if (imageIsRevealed) {
+                            openImagePreview(attachment, attachmentIndex, false);
+                          } else if (!fromMe && !isDownloading) {
+                            handleRevealImage(attachment);
+                          }
+                        }}
+                        disabled={isDownloading}
                         aria-label={`View image ${attachment.originalName}`}
-                        title="View image"
-                        className={`absolute inset-0 z-0 flex items-center justify-center text-white transition ${imageIsRevealed ? "bg-transparent" : "bg-black/20 hover:bg-black/40"} ${loadingPreviewId === attachment.publicId ? "!bg-black/35" : ""}`}
-                      >
-                        {loadingPreviewId === attachment.publicId ? (
-                          <span className="loading loading-spinner loading-sm text-emerald-400" />
-                        ) : !imageIsRevealed && !fromMe ? (
-                          <span className="rounded-full bg-black/75 px-4 py-2 text-sm font-medium">View image</span>
-                        ) : null}
-                      </button>
+                        title={imageIsRevealed ? "View image" : "Load image"}
+                        className={`absolute inset-0 z-0 flex items-center justify-center text-white transition ${imageIsRevealed ? "bg-transparent" : ""}`}
+                      />
+                      {imageIsRevealed && !fromMe && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            saveAttachment(attachment, attachmentIndex);
+                          }}
+                          aria-label={`Download image ${attachment.originalName}`}
+                          title="Save image"
+                          className="absolute bottom-2 right-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/75 text-white shadow-md transition hover:bg-emerald-500 hover:text-black"
+                        >
+                          <BsDownload aria-hidden="true" size={15} />
+                        </button>
+                      )}
                     </div>
                   ) : (
                     <div key={attachment.publicId} className="flex max-w-full items-center gap-3 rounded border border-white/15 bg-black/20 px-3 py-2 text-sm text-white">
-                      {attachment.mimeType === "application/pdf"
-                        ? <BsFileEarmarkPdf aria-hidden="true" className="shrink-0 text-red-400" size={22} />
-                        : <BsFileEarmark aria-hidden="true" className="shrink-0 text-gray-300" size={22} />}
+                      {getDocumentIcon(attachment)}
                       <div className="min-w-0 flex-1">
-                        <p className="max-w-56 truncate">{attachment.originalName}</p>
+                        <p className="max-w-56 truncate font-medium">{attachment.originalName}</p>
                         <p className="text-xs text-gray-400">{formatFileSize(attachment.size)}</p>
                       </div>
                       {!fromMe && (
                         <button
                           type="button"
                           onClick={() => saveAttachment(attachment, attachmentIndex)}
-                          aria-label={`Download ${attachment.originalName}`}
+                          aria-label={`Save as ${attachment.originalName}`}
                           title="Save as"
-                          className="flex shrink-0 items-center gap-1.5 rounded px-2 py-1 text-xs text-pink-200 hover:bg-white/10"
+                          className="flex shrink-0 items-center gap-1.5 rounded px-2.5 py-1.5 text-xs text-pink-200 hover:bg-white/10 border border-pink-400/30"
                         >
-                          <BsDownload aria-hidden="true" size={15} />
+                          <BsDownload aria-hidden="true" size={14} />
                           <span>Save as</span>
                         </button>
                       )}
@@ -260,9 +413,21 @@ const Message = ({ message }) => {
         )}
       </div>
       {activeImage && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-black/95 text-white" role="dialog" aria-modal="true" aria-label={`Image preview: ${activeImage.originalName}`}>
-          <header className="flex h-14 shrink-0 items-center justify-between border-b border-white/10 px-4">
-            <span className="max-w-[75vw] truncate text-sm">{activeImage.originalName}</span>
+        <div
+          className="fixed inset-0 z-50 flex flex-col bg-black/80 backdrop-blur-md text-white"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Image preview: ${activeImage.originalName}`}
+          onClick={() => {
+            setActiveImage(null);
+            setActiveImageSaved(false);
+          }}
+        >
+          <header
+            className="flex h-14 shrink-0 items-center justify-between border-b border-white/10 bg-black/40 px-4 backdrop-blur-sm"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="max-w-[75vw] truncate text-sm font-medium">{activeImage.originalName}</span>
             <button
               type="button"
               onClick={() => {
@@ -271,17 +436,20 @@ const Message = ({ message }) => {
               }}
               aria-label="Close image preview"
               title="Close"
-              className="flex h-9 w-9 items-center justify-center rounded-full text-gray-300 hover:bg-white/10 hover:text-white"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-gray-300 hover:bg-white/10 hover:text-white transition"
             >
               <BsX size={24} />
             </button>
           </header>
           <main className="flex min-h-0 flex-1 items-center justify-center overflow-hidden p-4">
-            <div className="relative flex max-h-full max-w-full items-center">
+            <div
+              className="relative flex max-h-full max-w-full items-center"
+              onClick={(e) => e.stopPropagation()}
+            >
               <img
                 src={activeImage.url}
                 alt={activeImage.originalName}
-                className="max-h-[calc(100dvh-5rem)] max-w-[calc(100vw-5rem)] object-contain"
+                className="max-h-[calc(100dvh-5rem)] max-w-[calc(100vw-5rem)] object-contain rounded-lg shadow-2xl"
               />
               {!fromMe && !activeImageSaved && (
                 <button
@@ -289,7 +457,7 @@ const Message = ({ message }) => {
                   onClick={() => saveAttachment(activeImage, activeImage.attachmentIndex)}
                   aria-label={`Save ${activeImage.originalName} as a file`}
                   title="Save as"
-                  className="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full bg-emerald-500 text-black shadow-lg hover:bg-emerald-400"
+                  className="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full bg-emerald-500 text-black shadow-xl hover:bg-emerald-400 transition transform hover:scale-105 active:scale-95"
                 >
                   <BsDownload aria-hidden="true" size={20} />
                 </button>

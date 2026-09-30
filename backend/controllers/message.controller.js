@@ -153,7 +153,8 @@ export const sendMessage = asyncHandler(async (req, res) => {
     return res.status(403).json({ error: "You can only message accepted friends" });
   }
 
-  io.to(userRoom(receiverId)).to(userRoom(senderId)).emit("newMessage", newMessage);
+  io.to(userRoom(receiverId)).emit("newMessage", newMessage);
+  io.to(userRoom(senderId)).emit("newMessage", newMessage);
   res.status(201).json(newMessage);
 });
 
@@ -291,6 +292,7 @@ export const deleteMessageForEveryone = asyncHandler(async (req, res) => {
     conversationId: String(message.conversationId),
     deletedForEveryone: true,
   };
-  io.to(userRoom(message.senderId)).to(userRoom(message.receiverId)).emit("messageDeleted", event);
+  io.to(userRoom(message.senderId)).emit("messageDeleted", event);
+  io.to(userRoom(message.receiverId)).emit("messageDeleted", event);
   res.status(200).json(event);
 });

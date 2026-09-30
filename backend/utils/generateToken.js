@@ -14,6 +14,8 @@ const generateToken = (userId, res) => {
     sameSite: isProduction ? "none" : "lax",
     secure: isProduction,
   });
+
+  return token;
 };
 
 export default generateToken;

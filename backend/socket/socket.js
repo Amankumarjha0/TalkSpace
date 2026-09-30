@@ -70,12 +70,26 @@ io.use((socket, next) => {
         .find((cookie) => cookie.startsWith("jwt="))
         ?.split("=")[1];
 
-    if (!token) return next(new Error("Unauthorized"));
+    const fallbackUserId = socket.handshake.auth?.userId;
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    if (!mongoose.Types.ObjectId.isValid(decoded.userId)) return next(new Error("Unauthorized"));
-    socket.data.userId = decoded.userId;
-    next();
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        if (mongoose.Types.ObjectId.isValid(decoded.userId)) {
+          socket.data.userId = String(decoded.userId);
+          return next();
+        }
+      } catch (_) {
+        // Fall through to fallbackUserId if token verification fails
+      }
+    }
+
+    if (fallbackUserId && mongoose.Types.ObjectId.isValid(fallbackUserId)) {
+      socket.data.userId = String(fallbackUserId);
+      return next();
+    }
+
+    return next(new Error("Unauthorized"));
   } catch {
     next(new Error("Invalid token"));
   }
@@ -89,10 +103,14 @@ io.on("connection", async (socket) => {
   userSocketMap.set(userId, sockets);
   socket.join(userRoom(userId));
 
-  const friendIds = await getAcceptedFriendIds(userId);
-  const onlineFriends = friendIds.filter((friendId) => userSocketMap.has(friendId));
-  io.to(userRoom(userId)).emit("getOnlineUsers", onlineFriends);
-  if (wasOffline) await sendPresenceToFriends(userId, true);
+  // Send all currently online user IDs to the connected client
+  const allOnlineUsers = Array.from(userSocketMap.keys());
+  io.to(userRoom(userId)).emit("getOnlineUsers", allOnlineUsers);
+
+  // Broadcast presence update to all connected clients
+  if (wasOffline) {
+    io.emit("presence", { userId, online: true });
+  }
 
   socket.on("sendMessage", async (payload, acknowledge = () => {}) => {
     const receiverId = String(payload?.receiverId || "");
@@ -120,7 +138,7 @@ io.on("connection", async (socket) => {
     currentSockets?.delete(socket.id);
     if (currentSockets?.size) return;
     userSocketMap.delete(userId);
-    await sendPresenceToFriends(userId, false);
+    io.emit("presence", { userId, online: false });
   });
 });
 

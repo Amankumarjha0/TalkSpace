@@ -39,9 +39,11 @@ export const SocketContextProvider = ({ children }) => {
       return;
     }
 
-    const token = getCookie("jwt");
+    const token = authUser?.token || getCookie("jwt");
+    const userId = authUser?._id;
+
     const newSocket = io(SOCKET_URL, {
-      auth: { token },
+      auth: { token, userId },
       withCredentials: true,
       transports: ["websocket", "polling"],
     });
@@ -50,13 +52,16 @@ export const SocketContextProvider = ({ children }) => {
     setSocket(newSocket);
 
     newSocket.on("getOnlineUsers", (users) => {
-      setOnlineUsers(users);
+      setOnlineUsers(Array.isArray(users) ? users.map(String) : []);
     });
 
     newSocket.on("presence", ({ userId, online }) => {
+      if (!userId) return;
+      const targetId = String(userId);
       setOnlineUsers((users) => {
-        if (online) return users.includes(userId) ? users : [...users, userId];
-        return users.filter((id) => id !== userId);
+        const normalized = users.map(String);
+        if (online) return normalized.includes(targetId) ? normalized : [...normalized, targetId];
+        return normalized.filter((id) => id !== targetId);
       });
     });
 

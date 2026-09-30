@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import { AiOutlineUser } from "react-icons/ai";
 import useConversation from "../../zustand/useConversation";
 import { useSocketContext } from "../../context/SocketContext";
+import MobileProfileMenu from "../common/MobileProfileMenu";
 
 const Sidebar = () => {
   const { selectedConversation } = useConversation();
@@ -37,6 +38,10 @@ const Sidebar = () => {
     <div
       className={`${selectedConversation ? "hidden" : "flex"} h-full min-h-0 w-full flex-col border-r border-[#FFF]/20 bg-[#0a0a0a] px-4 py-2 md:ml-[74px] md:flex md:w-[300px] lg:w-[380px] 2xl:w-[450px]`}
     >
+      <div className="mb-2 flex items-center justify-between border-b border-white/10 pb-2 md:hidden">
+        <img src="/nav_logo.webp" alt="TalkSpace" className="h-10 w-auto object-contain" />
+        <MobileProfileMenu />
+      </div>
       <SearchInput onFriendshipsChanged={refreshSocialLists} />
       <div className="mb-1 flex shrink-0 border-b border-white/10" role="tablist" aria-label="People and chats">
         <button role="tab" aria-selected={activeTab === "chats"} onClick={() => setActiveTab("chats")} className={`flex-1 border-b-2 px-3 py-2 text-sm ${activeTab === "chats" ? "border-pink-400 text-white" : "border-transparent text-gray-400 hover:text-white"}`}>
@@ -51,13 +56,6 @@ const Sidebar = () => {
       </div>
       <div className={activeTab === "requests" ? "flex min-h-0 flex-1 flex-col" : "hidden"}>
         <FriendRequests refreshKey={requestRefreshKey} onChanged={refreshSocialLists} onCountChange={setRequestCount} />
-      </div>
-      <div className="flex shrink-0 items-center justify-between border-t border-white/10 pt-3 md:hidden">
-        <Link to="/profile" className="inline-flex items-center gap-2 py-2 text-sm text-gray-200">
-          <AiOutlineUser size={22} aria-hidden="true" />
-          <span>Profile</span>
-        </Link>
-        <LogoutBtn />
       </div>
     </div>
   );

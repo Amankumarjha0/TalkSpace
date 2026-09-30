@@ -9,21 +9,34 @@ const Messages = () => {
   // console.log(messages);
   useListenMessages();
   const lastMessageRef = useRef();
+  const containerRef = useRef();
 
-  // To scroll down to new messages
+  // To scroll down to new messages automatically
   useEffect(() => {
-    setTimeout(() => {
-      lastMessageRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 100);
+    const scrollToBottom = () => {
+      if (lastMessageRef.current) {
+        lastMessageRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+      } else if (containerRef.current) {
+        containerRef.current.scrollTop = containerRef.current.scrollHeight;
+      }
+    };
+
+    const timer = setTimeout(scrollToBottom, 50);
+    const frame = requestAnimationFrame(scrollToBottom);
+
+    return () => {
+      clearTimeout(timer);
+      cancelAnimationFrame(frame);
+    };
   }, [messages]);
 
   return (
-    <div className="px-4 flex-1 overflow-auto">
+    <div ref={containerRef} className="px-4 flex-1 min-h-0 overflow-y-auto overscroll-contain">
       {loading &&
         [...Array(3)].map((_, index) => <MessageSkeleton key={index} />)}
 
       {!loading && messages.length === 0 && (
-        <p className="flex justify-center items-center h-full text-center">
+        <p className="flex justify-center items-center h-full text-center text-gray-400">
           Send a message to start the conversation
         </p>
       )}

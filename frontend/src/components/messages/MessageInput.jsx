@@ -66,17 +66,18 @@ const MessageInput = () => {
 
     const accepted = [];
     files.slice(0, availableSlots).forEach((file) => {
-      if (file.size > MAX_FILE_SIZE) {
-        toast.error(`${file.name} exceeds the 5 MB file limit`);
+      const isImage = file.type.startsWith("image/");
+      if (isImage && file.size > MAX_IMAGE_SIZE) {
+        toast.error(`${file.name} exceeds the 1.5 MB image limit`);
         return;
       }
-      if (file.type.startsWith("image/") && file.size > MAX_IMAGE_SIZE) {
-        toast.error(`${file.name} exceeds the 1.5 MB image limit`);
+      if (!isImage && file.size > MAX_FILE_SIZE) {
+        toast.error(`${file.name} exceeds the 5 MB document limit`);
         return;
       }
       accepted.push({
         file,
-        previewUrl: file.type.startsWith("image/") ? URL.createObjectURL(file) : "",
+        previewUrl: isImage ? URL.createObjectURL(file) : "",
       });
     });
 
@@ -126,7 +127,7 @@ const MessageInput = () => {
 
   return (
     <>
-      <form className="my-2 shrink-0 px-3 sm:my-3 sm:px-4" onSubmit={handleSubmit}>
+      <form className="shrink-0 sticky bottom-0 z-20 bg-[#0a0a0a] my-2 px-3 sm:my-3 sm:px-4 pb-[max(0.25rem,env(safe-area-inset-bottom))]" onSubmit={handleSubmit}>
         <div className="relative w-full">
           <input
             type="text"
