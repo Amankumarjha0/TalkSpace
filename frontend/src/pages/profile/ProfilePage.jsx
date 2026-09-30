@@ -148,10 +148,20 @@ const ProfilePage = () => {
           </div>
 
           <div>
+            <label className="block text-sm text-gray-300 mb-1">Username</label>
+            <input
+              type="text"
+              value={authUser?.username ? `@${authUser.username}` : ""}
+              readOnly
+              className="w-full cursor-not-allowed rounded-lg border border-white/10 bg-[#1a1a1a] px-3 py-2 text-gray-400 outline-none"
+            />
+          </div>
+
+          <div>
             <label className="block text-sm text-gray-300 mb-1">Email address</label>
             <input
               type="email"
-              value={authUser?.email || authUser?.username || ""}
+              value={authUser?.email || ""}
               readOnly
               className="w-full cursor-not-allowed rounded-lg border border-white/10 bg-[#1a1a1a] px-3 py-2 text-gray-400 outline-none"
             />

@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Conversations from "./Conversations.jsx";
 import FriendRequests from "./FriendRequests.jsx";
 import LogoutBtn from "./LogoutBtn.jsx";
@@ -6,9 +6,11 @@ import SearchInput from "./SearchInput.jsx";
 import { Link } from "react-router-dom";
 import { AiOutlineUser } from "react-icons/ai";
 import useConversation from "../../zustand/useConversation";
+import { useSocketContext } from "../../context/SocketContext";
 
 const Sidebar = () => {
   const { selectedConversation } = useConversation();
+  const { socket } = useSocketContext();
   const [activeTab, setActiveTab] = useState("chats");
   const [refreshKey, setRefreshKey] = useState(0);
   const [requestRefreshKey, setRequestRefreshKey] = useState(0);
@@ -17,6 +19,19 @@ const Sidebar = () => {
     setRefreshKey((key) => key + 1);
     setRequestRefreshKey((key) => key + 1);
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+    const refreshChats = () => setRefreshKey((key) => key + 1);
+    socket.on("newMessage", refreshChats);
+    socket.on("messageDeleted", refreshChats);
+    socket.on("messageDeletedForMe", refreshChats);
+    return () => {
+      socket.off("newMessage", refreshChats);
+      socket.off("messageDeleted", refreshChats);
+      socket.off("messageDeletedForMe", refreshChats);
+    };
+  }, [socket]);
 
   return (
     <div

@@ -3,8 +3,10 @@ import mongoose from "mongoose";
 import User from "../models/user.model.js";
 import Friendship from "../models/friendship.model.js";
 import Conversation from "../models/conversation.model.js";
+import Message from "../models/message.model.js";
 import cloudinary, { configureCloudinary } from "../config/cloudinary.js";
 import { getPairKey } from "../utils/pairKey.js";
+import { getMessagePreview } from "../utils/messagePreview.js";
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -52,6 +54,25 @@ export const getUsersForSidebar = asyncHandler(async (req, res) => {
     .lean();
   const hasMore = conversations.length > limit;
   const page = conversations.slice(0, limit);
+  const latestVisibleMessages = await Message.aggregate([
+    {
+      $match: {
+        conversationId: { $in: page.map((conversation) => conversation._id) },
+        deletedFor: { $ne: userId },
+        deletedForEveryone: { $ne: true },
+      },
+    },
+    { $sort: { createdAt: -1 } },
+    {
+      $group: {
+        _id: "$conversationId",
+        latest: { $first: { message: "$message", attachments: "$attachments" } },
+      },
+    },
+  ]);
+  const previewsByConversation = new Map(
+    latestVisibleMessages.map((item) => [String(item._id), getMessagePreview(item.latest)])
+  );
   const users = await User.find({ _id: { $in: friendIds } })
     .select("username fullName profilePic authProvider gender")
     .lean();
@@ -60,7 +81,12 @@ export const getUsersForSidebar = asyncHandler(async (req, res) => {
     const otherId = conversation.participants.find((id) => String(id) !== String(userId));
     const otherUser = usersById.get(String(otherId));
     if (!otherUser) return [];
-    return [{ ...otherUser, conversationId: conversation._id, lastMessage: conversation.lastMessage, updatedAt: conversation.updatedAt }];
+    return [{
+      ...otherUser,
+      conversationId: conversation._id,
+      lastMessage: previewsByConversation.get(String(conversation._id)) || "",
+      updatedAt: conversation.updatedAt,
+    }];
   });
   const lastConversation = page.at(-1);
   const nextCursor = hasMore && lastConversation
